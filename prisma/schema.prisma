@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - represents all users (admin and members)
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  fullName      String    @map("full_name")
+  linkedinUrl   String?   @map("linkedin_url")
+  role          Role      @default(MEMBER)
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  sessions      Session[]
+  invitesCreated Invite[] @relation("AdminInvites")
+  inviteUsed    Invite?   @relation("UsedInvite")
+
+  @@map("users")
+}
+
+// Invite model - single-use invite links
+model Invite {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  adminId   String    @map("admin_id")
+  used      Boolean   @default(false)
+  usedById  String?   @unique @map("used_by_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  admin     User      @relation("AdminInvites", fields: [adminId], references: [id])
+  usedBy    User?     @relation("UsedInvite", fields: [usedById], references: [id])
+
+  @@map("invites")
+}
+
+// Session model - time tracking sessions
+model Session {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  taskDescription String?   @map("task_description")
+  startTime       DateTime  @map("start_time")
+  endTime         DateTime? @map("end_time")
+  duration        Int?      // Duration in seconds
+  verified        Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([startTime])
+  @@index([endTime])
+  @@map("sessions")
+}
+
+// Enum for user roles
+enum Role {
+  ADMIN
+  MEMBER
+}
