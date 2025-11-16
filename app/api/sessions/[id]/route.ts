@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -13,6 +13,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
     const { startTime, endTime } = await request.json();
 
     if (!startTime || !endTime) {
@@ -34,7 +35,7 @@ export async function PATCH(
 
     // Verify the session belongs to the user
     const existingSession = await prisma.session.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingSession) {
@@ -52,7 +53,7 @@ export async function PATCH(
 
     // Update session with corrected times
     const updatedSession = await prisma.session.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         startTime: start,
         endTime: end,
