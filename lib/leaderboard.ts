@@ -7,6 +7,7 @@ interface LeaderboardEntry {
   fullName: string;
   linkedinUrl: string | null;
   totalSeconds: number;
+  isActive: boolean;
 }
 
 // Get the 5 AM boundary for a given date in the app timezone
@@ -153,6 +154,18 @@ export async function getLeaderboard(
     },
   });
 
+  // Get all active sessions (users currently clocked in)
+  const activeSessions = await prisma.session.findMany({
+    where: {
+      endTime: null,
+    },
+    select: {
+      userId: true,
+    },
+  });
+
+  const activeUserIds = new Set(activeSessions.map(s => s.userId));
+
   // Initialize leaderboard with all users at 0 seconds
   const userTotals = new Map<string, LeaderboardEntry>();
   for (const user of allUsers) {
@@ -161,6 +174,7 @@ export async function getLeaderboard(
       fullName: user.fullName,
       linkedinUrl: user.linkedinUrl,
       totalSeconds: 0,
+      isActive: activeUserIds.has(user.id),
     });
   }
 

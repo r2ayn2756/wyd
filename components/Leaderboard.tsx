@@ -15,6 +15,7 @@ interface LeaderboardEntry {
   linkedinUrl: string | null;
   totalSeconds: number;
   formattedTime: string;
+  isActive: boolean;
 }
 
 type LeaderboardPeriod = "daily" | "weekly" | "monthly" | "yearly" | "alltime";
@@ -133,6 +134,13 @@ export function Leaderboard() {
               >
                 {entry.rank}
               </div>
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  entry.isActive ? "bg-green-500" : "bg-red-500"
+                }`}
+                aria-label={entry.isActive ? "Currently active" : "Not active"}
+                title={entry.isActive ? "Clocked in" : "Clocked out"}
+              />
               <div className="flex-1">
                 {entry.linkedinUrl ? (
                   <a
