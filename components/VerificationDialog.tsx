@@ -81,8 +81,8 @@ export function VerificationDialog({
 
   if (isFixing) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
+      <Dialog open={open} onOpenChange={() => {/* Non-dismissible during fix */}}>
+        <DialogContent className="sm:max-w-[500px]" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Fix Session Times</DialogTitle>
             <DialogDescription>
@@ -137,13 +137,12 @@ export function VerificationDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={() => {/* Non-dismissible - must verify */}}>
+      <DialogContent className="sm:max-w-[500px]" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle>Verify Your Session</DialogTitle>
+          <DialogTitle>Verify Your Session (Required)</DialogTitle>
           <DialogDescription>
-            You tracked {formatDuration(duration)} for the following task. Is
-            this correct?
+            You tracked {formatDuration(duration)} for the following task. Please verify or fix before continuing.
           </DialogDescription>
         </DialogHeader>
 

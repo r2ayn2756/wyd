@@ -50,6 +50,9 @@ export default function ProfilePage() {
     setMessage({ type: "", text: "" });
     setIsSaving(true);
 
+    console.log("=== Profile Save - Client Side ===");
+    console.log("Form data being sent:", formData);
+
     try {
       const response = await fetch("/api/user/profile", {
         method: "PATCH",
@@ -57,20 +60,29 @@ export default function ProfilePage() {
         body: JSON.stringify(formData),
       });
 
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
+
+      const responseData = await response.json();
+      console.log("Response data:", responseData);
+
       if (!response.ok) {
-        const error = await response.json();
-        setMessage({ type: "error", text: error.error || "Failed to update profile" });
+        console.error("Save failed:", responseData.error);
+        setMessage({ type: "error", text: responseData.error || "Failed to update profile" });
         return;
       }
 
-      setMessage({ type: "success", text: "Profile updated successfully" });
+      console.log("Save successful!");
+      setMessage({ type: "success", text: "Profile updated successfully! Refreshing..." });
 
       // Refresh the page after a short delay
       setTimeout(() => {
-        router.refresh();
+        console.log("Refreshing page...");
+        window.location.reload();
       }, 1500);
     } catch (error) {
-      setMessage({ type: "error", text: "Failed to update profile" });
+      console.error("Client-side error during save:", error);
+      setMessage({ type: "error", text: "Network error: Failed to update profile" });
     } finally {
       setIsSaving(false);
     }

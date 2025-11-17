@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy } from "lucide-react";
+import { Trophy, History } from "lucide-react";
+import { UserSessionsDialog } from "@/components/UserSessionsDialog";
+import { Button } from "@/components/ui/button";
 
 interface LeaderboardEntry {
   rank: number;
@@ -47,6 +49,9 @@ export function Leaderboard() {
   const [activePeriod, setActivePeriod] = useState<LeaderboardPeriod>("daily");
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string>("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchLeaderboard(activePeriod);
@@ -70,6 +75,12 @@ export function Leaderboard() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleViewSessions = (userId: string, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setIsDialogOpen(true);
   };
 
   const renderSkeletons = () => (
@@ -107,7 +118,7 @@ export function Leaderboard() {
             aria-label={`Rank ${entry.rank}: ${entry.fullName} with ${entry.formattedTime}`}
             className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1">
               <div
                 aria-label={`Rank ${entry.rank}`}
                 className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${
@@ -122,7 +133,7 @@ export function Leaderboard() {
               >
                 {entry.rank}
               </div>
-              <div>
+              <div className="flex-1">
                 {entry.linkedinUrl ? (
                   <a
                     href={entry.linkedinUrl}
@@ -138,8 +149,19 @@ export function Leaderboard() {
                 )}
               </div>
             </div>
-            <div className="font-mono font-semibold tabular-nums" aria-label={`Time tracked: ${entry.formattedTime}`}>
-              {entry.formattedTime}
+            <div className="flex items-center gap-3">
+              <div className="font-mono font-semibold tabular-nums" aria-label={`Time tracked: ${entry.formattedTime}`}>
+                {entry.formattedTime}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleViewSessions(entry.userId, entry.fullName)}
+                aria-label={`View ${entry.fullName}'s session history`}
+              >
+                <History className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         ))}
@@ -150,33 +172,41 @@ export function Leaderboard() {
   const config = PERIOD_CONFIG[activePeriod];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-5 w-5" />
-          {config.title}
-        </CardTitle>
-        <CardDescription>{config.subtitle}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activePeriod} onValueChange={(v) => setActivePeriod(v as LeaderboardPeriod)}>
-          <TabsList className="grid w-full grid-cols-5 text-xs sm:text-sm">
-            <TabsTrigger value="daily" className="px-2 sm:px-3">Daily</TabsTrigger>
-            <TabsTrigger value="weekly" className="px-2 sm:px-3">Weekly</TabsTrigger>
-            <TabsTrigger value="monthly" className="px-2 sm:px-3">Monthly</TabsTrigger>
-            <TabsTrigger value="yearly" className="px-2 sm:px-3">Yearly</TabsTrigger>
-            <TabsTrigger value="alltime" className="px-2 sm:px-3">All</TabsTrigger>
-          </TabsList>
+    <>
+      <UserSessionsDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        userId={selectedUserId || ""}
+        userName={selectedUserName}
+      />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-5 w-5" />
+            {config.title}
+          </CardTitle>
+          <CardDescription>{config.subtitle}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activePeriod} onValueChange={(v) => setActivePeriod(v as LeaderboardPeriod)}>
+            <TabsList className="grid w-full grid-cols-5 text-xs sm:text-sm">
+              <TabsTrigger value="daily" className="px-2 sm:px-3">Daily</TabsTrigger>
+              <TabsTrigger value="weekly" className="px-2 sm:px-3">Weekly</TabsTrigger>
+              <TabsTrigger value="monthly" className="px-2 sm:px-3">Monthly</TabsTrigger>
+              <TabsTrigger value="yearly" className="px-2 sm:px-3">Yearly</TabsTrigger>
+              <TabsTrigger value="alltime" className="px-2 sm:px-3">All</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value={activePeriod} className="mt-6">
-            {isLoading && data.length === 0 ? (
-              renderSkeletons()
-            ) : (
-              renderLeaderboard(data)
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+            <TabsContent value={activePeriod} className="mt-6">
+              {isLoading && data.length === 0 ? (
+                renderSkeletons()
+              ) : (
+                renderLeaderboard(data)
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </>
   );
 }

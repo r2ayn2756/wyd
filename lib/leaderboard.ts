@@ -144,6 +144,26 @@ export async function getLeaderboard(
 ): Promise<LeaderboardEntry[]> {
   const { start, end } = getDateRangeForPeriod(period, timezone);
 
+  // First, get all users in the system
+  const allUsers = await prisma.user.findMany({
+    select: {
+      id: true,
+      fullName: true,
+      linkedinUrl: true,
+    },
+  });
+
+  // Initialize leaderboard with all users at 0 seconds
+  const userTotals = new Map<string, LeaderboardEntry>();
+  for (const user of allUsers) {
+    userTotals.set(user.id, {
+      userId: user.id,
+      fullName: user.fullName,
+      linkedinUrl: user.linkedinUrl,
+      totalSeconds: 0,
+    });
+  }
+
   // Query all sessions in the date range
   const sessions = await prisma.session.findMany({
     where: {
@@ -156,40 +176,29 @@ export async function getLeaderboard(
       },
       verified: true,
     },
-    include: {
-      user: {
-        select: {
-          id: true,
-          fullName: true,
-          linkedinUrl: true,
-        },
-      },
+    select: {
+      userId: true,
+      duration: true,
     },
   });
 
-  // Aggregate by user
-  const userTotals = new Map<string, LeaderboardEntry>();
-
+  // Add session durations to user totals
   for (const session of sessions) {
-    const userId = session.user.id;
-
-    if (!userTotals.has(userId)) {
-      userTotals.set(userId, {
-        userId,
-        fullName: session.user.fullName,
-        linkedinUrl: session.user.linkedinUrl,
-        totalSeconds: 0,
-      });
+    const entry = userTotals.get(session.userId);
+    if (entry) {
+      entry.totalSeconds += session.duration || 0;
     }
-
-    const entry = userTotals.get(userId)!;
-    entry.totalSeconds += session.duration || 0;
   }
 
-  // Convert to array and sort by total time descending
-  return Array.from(userTotals.values()).sort(
-    (a, b) => b.totalSeconds - a.totalSeconds
-  );
+  // Convert to array and sort by total time descending, then by name for ties
+  return Array.from(userTotals.values()).sort((a, b) => {
+    // Primary sort: by total time (descending)
+    if (b.totalSeconds !== a.totalSeconds) {
+      return b.totalSeconds - a.totalSeconds;
+    }
+    // Secondary sort: by name (ascending) for users with same time
+    return a.fullName.localeCompare(b.fullName);
+  });
 }
 
 export function formatDuration(seconds: number): string {
