@@ -148,22 +148,32 @@ export function TimeTracker({ userId }: TimeTrackerProps) {
 
       if (!response.ok) {
         toast.error("Failed to verify session");
+        setIsLoading(false);
         return;
       }
 
       setSessionToVerify(null);
       setIsVerificationDialogOpen(false);
-      toast.success("Session verified successfully!");
+      toast.success("Session verified successfully! Refreshing...");
+
+      // Refresh the page to show updated leaderboard
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error("Verify error:", error);
       toast.error("Failed to verify session");
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handleManualFix = async (startTime: string, endTime: string) => {
     if (!sessionToVerify) return;
+
+    console.log("=== Manual Fix - Client Side ===");
+    console.log("Session ID:", sessionToVerify.id);
+    console.log("New start time:", startTime);
+    console.log("New end time:", endTime);
 
     setIsLoading(true);
     try {
@@ -173,19 +183,32 @@ export function TimeTracker({ userId }: TimeTrackerProps) {
         body: JSON.stringify({ startTime, endTime }),
       });
 
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
+
       if (!response.ok) {
         const error = await response.json();
+        console.error("Manual fix failed:", error);
         toast.error(error.error || "Failed to update session");
+        setIsLoading(false);
         return;
       }
 
+      const data = await response.json();
+      console.log("Manual fix successful:", data);
+
       setSessionToVerify(null);
       setIsVerificationDialogOpen(false);
-      toast.success("Session updated successfully!");
+      toast.success("Session updated successfully! Refreshing...");
+
+      // Refresh the page to show updated leaderboard
+      setTimeout(() => {
+        console.log("Refreshing page...");
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error("Manual fix error:", error);
       toast.error("Failed to update session");
-    } finally {
       setIsLoading(false);
     }
   };

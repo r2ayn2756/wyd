@@ -29,7 +29,14 @@
       "Bash(git commit:*)",
       "Bash(git remote add:*)",
       "Bash(git branch:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(openssl rand:*)",
+      "Bash(find:*)",
+      "Bash(node check-sessions.js:*)",
+      "Bash(node check-leaderboard.js:*)",
+      "Bash(curl:*)",
+      "Bash(nul)",
+      "Bash(del check-sessions.js check-leaderboard.js)"
     ],
     "deny": [],
     "ask": []
