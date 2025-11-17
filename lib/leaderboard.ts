@@ -12,7 +12,7 @@ interface LeaderboardEntry {
 
 // Get the 5 AM boundary for a given date in the app timezone
 function get5AMBoundary(date: Date, timezone: string = "America/New_York"): Date {
-  // Format to the target timezone at 5:00 AM
+  // Get the date components in the target timezone
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
     year: "numeric",
@@ -21,18 +21,29 @@ function get5AMBoundary(date: Date, timezone: string = "America/New_York"): Date
   });
 
   const parts = formatter.formatToParts(date);
-  const year = parts.find((p) => p.type === "year")!.value;
-  const month = parts.find((p) => p.type === "month")!.value;
-  const day = parts.find((p) => p.type === "day")!.value;
+  const year = parseInt(parts.find((p) => p.type === "year")!.value);
+  const month = parseInt(parts.find((p) => p.type === "month")!.value);
+  const day = parseInt(parts.find((p) => p.type === "day")!.value);
 
-  // Create a date string at 5:00 AM in the target timezone
-  const dateStr = `${year}-${month}-${day}T05:00:00`;
+  // Create a date representing 5 AM on this day in the target timezone
+  // by iterating through hours to find when it becomes 5 AM in that zone
+  let testDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
 
-  // Parse as if it's in the target timezone
-  // Note: This is a simplified approach. For production, use a library like date-fns-tz
-  const localDate = new Date(dateStr);
+  for (let hour = 0; hour < 24; hour++) {
+    testDate = new Date(Date.UTC(year, month - 1, day, hour, 0, 0));
+    const hourInTZ = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      hour: "numeric",
+      hour12: false,
+    }).format(testDate);
 
-  return localDate;
+    if (parseInt(hourInTZ) === 5) {
+      return testDate;
+    }
+  }
+
+  // Fallback (should not reach here)
+  return new Date(Date.UTC(year, month - 1, day, 9, 0, 0)); // 9 UTC = 5 AM EST (UTC-4) or 10 UTC for EDT (UTC-5)
 }
 
 function getDateRangeForPeriod(
