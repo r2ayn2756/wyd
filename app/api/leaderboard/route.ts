@@ -24,6 +24,7 @@ export async function GET(request: Request) {
       linkedinUrl: entry.linkedinUrl,
       totalSeconds: entry.totalSeconds,
       formattedTime: formatDuration(entry.totalSeconds),
+      isActive: entry.isActive,
     }));
 
     return NextResponse.json({ leaderboard: formatted, period });
