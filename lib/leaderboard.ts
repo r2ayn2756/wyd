@@ -11,7 +11,7 @@ interface LeaderboardEntry {
 }
 
 // Get the 5 AM boundary for a given date in the app timezone
-function get5AMBoundary(date: Date, timezone: string = "America/New_York"): Date {
+function get5AMBoundary(date: Date, timezone: string = "America/Chicago"): Date {
   // Get the date components in the target timezone
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
@@ -48,7 +48,7 @@ function get5AMBoundary(date: Date, timezone: string = "America/New_York"): Date
 
 function getDateRangeForPeriod(
   period: LeaderboardPeriod,
-  timezone: string = "America/New_York"
+  timezone: string = "America/Chicago"
 ): { start: Date; end: Date | null } {
   const now = new Date();
 
@@ -77,25 +77,25 @@ function getDateRangeForPeriod(
     }
 
     case "weekly": {
-      // Find last Monday at 5 AM
-      const dayOfWeek = now.getDay();
-      const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      const lastMonday = new Date(now);
-      lastMonday.setDate(lastMonday.getDate() - daysSinceMonday);
+      // Find last Sunday at 5 AM (Sunday = day 0)
+      const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const daysSinceSunday = dayOfWeek; // Current day of week IS days since Sunday
+      const lastSunday = new Date(now);
+      lastSunday.setDate(lastSunday.getDate() - daysSinceSunday);
 
-      const monday5AM = get5AMBoundary(lastMonday, timezone);
+      const sunday5AM = get5AMBoundary(lastSunday, timezone);
 
-      // If we're before Monday's 5 AM, go back one more week
-      if (now < monday5AM) {
-        lastMonday.setDate(lastMonday.getDate() - 7);
+      // If we're before Sunday's 5 AM, go back one more week
+      if (now < sunday5AM) {
+        lastSunday.setDate(lastSunday.getDate() - 7);
         return {
-          start: get5AMBoundary(lastMonday, timezone),
+          start: get5AMBoundary(lastSunday, timezone),
           end: null,
         };
       }
 
       return {
-        start: monday5AM,
+        start: sunday5AM,
         end: null,
       };
     }
@@ -152,7 +152,7 @@ function getDateRangeForPeriod(
 
 export async function getLeaderboard(
   period: LeaderboardPeriod,
-  timezone: string = process.env.APP_TIMEZONE || "America/New_York"
+  timezone: string = process.env.APP_TIMEZONE || "America/Chicago"
 ): Promise<LeaderboardEntry[]> {
   const { start, end } = getDateRangeForPeriod(period, timezone);
 
